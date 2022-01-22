@@ -52,4 +52,4 @@ args:
     mkdir -p /dev/bus/usb/$BUSNUM && \
     ln -s /dev/rtl_sdr $DEVPATH && \
     echo \"Symlinking $DEVPATH -> /dev/rtl_sdr\" && \
-    /rtl_433_prometheus --subprocess '/rtl_433 -F json -M newmodel'"
+    /rtl_433_prometheus --subprocess 'rtl_433 -F json -M newmodel'"
