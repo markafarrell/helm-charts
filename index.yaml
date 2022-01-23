@@ -6,6 +6,34 @@ entries:
         - kind: added
           description: Initial version
     apiVersion: v2
+    appVersion: 1.1.1
+    created: "2022-01-23T03:28:56.278523339Z"
+    dependencies:
+    - name: common
+      repository: https://library-charts.k8s-at-home.com
+      version: 4.3.0
+    description: prometheus exporter for rtl_433
+    digest: f9f6cfc6250cca6b02e6fb7c556a253edb1354f12df688a9891d1ee00da9bfd6
+    home: https://github.com/markafarrell/rtl_433_prometheus/charts/rtl-433-exporter
+    keywords:
+    - rtl-433-exporter
+    - rtl-433
+    kubeVersion: '>=1.16.0-0'
+    maintainers:
+    - email: mark.andrew.farrell@gmail.com
+      name: markafarrell
+    name: rtl-433-exporter
+    sources:
+    - https://github.com/markafarrell/rtl_433_prometheus
+    - https://github.com/merbanan/rtl_433
+    urls:
+    - https://github.com/markafarrell/helm-charts/releases/download/rtl-433-exporter-1.1.1/rtl-433-exporter-1.1.1.tgz
+    version: 1.1.1
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial version
+    apiVersion: v2
     appVersion: 1.1.0
     created: "2022-01-23T03:01:58.259983503Z"
     dependencies:
@@ -113,4 +141,4 @@ entries:
     urls:
     - https://github.com/markafarrell/helm-charts/releases/download/rtl-433-exporter-0.1.0/rtl-433-exporter-0.1.0.tgz
     version: 0.1.0
-generated: "2022-01-23T03:01:58.260141001Z"
+generated: "2022-01-23T03:28:56.278581139Z"
