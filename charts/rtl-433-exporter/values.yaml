@@ -9,7 +9,7 @@ image:
   # -- image repository
   repository: markfarrell/rtl_433_prometheus
   # -- image tag
-  tag: 1.0.0
+  tag: 1.1.0
   # -- image pull policy
   pullPolicy: IfNotPresent
 
@@ -41,15 +41,3 @@ resources:
     smarter-devices/rtl_sdr: "1"
   limits:
     smarter-devices/rtl_sdr: "1"
-
-command: ["/bin/bash"]
-args:
-  - -c
-  - "export BUSNUM=$(udevadm info --name /dev/rtl_sdr | grep BUSNUM | awk -F = '{ print $2 }') && \
-    export DEVNUM=$(udevadm info --name /dev/rtl_sdr | grep DEVNUM | awk -F = '{ print $2 }') &&\
-    export DEVDIR=/dev/bus/usb/$BUSNUM && \
-    export DEVPATH=$DEVDIR/$DEVNUM && \
-    mkdir -p /dev/bus/usb/$BUSNUM && \
-    ln -s /dev/rtl_sdr $DEVPATH && \
-    echo \"Symlinking $DEVPATH -> /dev/rtl_sdr\" && \
-    /rtl_433_prometheus --subprocess 'rtl_433 -F json -M newmodel'"
