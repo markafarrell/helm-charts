@@ -1,5 +1,32 @@
 apiVersion: v1
 entries:
+  route53-dynamic-dns:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial version
+    apiVersion: v2
+    appVersion: 1.2.1
+    created: "2022-06-28T10:46:09.363344603Z"
+    dependencies:
+    - name: common
+      repository: https://library-charts.k8s-at-home.com
+      version: 4.3.0
+    description: route53-dynamic-dns
+    digest: 694eb4c44e6e1b173d103ad36f6018115570fb361845e351be91f30797b85c2e
+    home: https://github.com/markafarrell/helm-charts/charts/route53-dynamic-dns
+    keywords:
+    - route53-dynamic-dns
+    kubeVersion: '>=1.16.0-0'
+    maintainers:
+    - email: mark.andrew.farrell@gmail.com
+      name: markafarrell
+    name: route53-dynamic-dns
+    sources:
+    - https://github.com/sjmayotte/route53-dynamic-dns/
+    urls:
+    - https://github.com/markafarrell/helm-charts/releases/download/route53-dynamic-dns-1.0.0/route53-dynamic-dns-1.0.0.tgz
+    version: 1.0.0
   rtl-433-exporter:
   - annotations:
       artifacthub.io/changes: |
@@ -141,4 +168,4 @@ entries:
     urls:
     - https://github.com/markafarrell/helm-charts/releases/download/rtl-433-exporter-0.1.0/rtl-433-exporter-0.1.0.tgz
     version: 0.1.0
-generated: "2022-01-23T03:28:56.278581139Z"
+generated: "2022-06-28T10:46:09.363359403Z"
