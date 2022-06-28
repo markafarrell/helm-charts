@@ -1,0 +1,22 @@
+apiVersion: v2
+appVersion: 1.2.1
+description: route53-dynamic-dns
+name: route53-dynamic-dns
+version: 1.0.0
+kubeVersion: ">=1.16.0-0"
+keywords:
+- route53-dynamic-dns
+home: https://github.com/markafarrell/helm-charts/charts/route53-dynamic-dns
+sources:
+- https://github.com/sjmayotte/route53-dynamic-dns/
+maintainers:
+- name: markafarrell
+  email: mark.andrew.farrell@gmail.com
+dependencies:
+- name: common
+  repository: https://library-charts.k8s-at-home.com
+  version: 4.3.0
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial version
