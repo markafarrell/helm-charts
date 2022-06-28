@@ -1,0 +1,52 @@
+#
+# IMPORTANT NOTE
+#
+# This chart inherits from our common library chart. You can check the default values/options here:
+# https://github.com/k8s-at-home/library-charts/tree/main/charts/stable/common/values.yaml
+#
+
+image:
+  # -- image repository
+  repository: sjmayotte/route53-dynamic-dns
+  # -- image tag
+  tag: v1.2.1
+  # -- image pull policy
+  pullPolicy: IfNotPresent
+
+# Disable probes
+probes:
+  liveness:
+    enabled: false
+  readiness:
+    enabled: false
+  startup:
+    enabled: false
+
+# Disable services
+service:
+  main:
+    enabled: false
+    ports:
+      http:
+        enabled: false
+
+env:
+  AWS_ACCESS_KEY_ID:
+    valueFrom:
+      secretKeyRef:
+        name: route53-dynamic-dns-aws-secret
+        key: AWS_ACCESS_KEY_ID
+
+  AWS_SECRET_ACCESS_KEY:
+    valueFrom:
+      secretKeyRef:
+        name: route53-dynamic-dns-aws-secret
+        key: AWS_ACCESS_KEY
+
+  AWS_REGION: us-east-1
+  ROUTE53_HOSTED_ZONE_ID:
+  ROUTE53_DOMAIN:
+  ROUTE53_TYPE: A
+  ROUTE53_TTL: 300
+
+  LOG_TO_STDOUT: true
