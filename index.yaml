@@ -168,4 +168,28 @@ entries:
     urls:
     - https://github.com/markafarrell/helm-charts/releases/download/rtl-433-exporter-0.1.0/rtl-433-exporter-0.1.0.tgz
     version: 0.1.0
-generated: "2022-06-28T10:46:09.363359403Z"
+  thanos:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: Initial version
+    apiVersion: v2
+    appVersion: 0.26.0
+    created: "2022-07-04T04:23:57.002091945Z"
+    description: Thanos Components
+    digest: beafc5a70abb7f823e7934e43b450544a7390d9c5dacc4da4a0b7f6bf3b91211
+    home: https://github.com/markafarrell/helm-charts/charts/thanos
+    keywords:
+    - thanos
+    - thanos-query
+    kubeVersion: '>=1.16.0-0'
+    maintainers:
+    - email: mark.andrew.farrell@gmail.com
+      name: markafarrell
+    name: thanos
+    sources:
+    - https://github.com/thanos-io/thanos
+    urls:
+    - https://github.com/markafarrell/helm-charts/releases/download/thanos-1.0.0/thanos-1.0.0.tgz
+    version: 1.0.0
+generated: "2022-07-04T04:23:57.002111246Z"
