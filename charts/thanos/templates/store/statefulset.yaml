@@ -1,0 +1,242 @@
+{{- if .Values.store.enabled -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+{{- if .Values.store.annotations }}
+  annotations:
+    {{ toYaml .Values.store.annotations | nindent 4 }}
+{{- end }}
+  labels:
+    {{- include "thanos.store.labels" . | nindent 4 }}
+    {{- if .Values.store.labels}}
+    {{ toYaml .Values.store.labels | nindent 4 }}
+    {{- end}}
+  name: {{ template "thanos.store.fullname" . }}
+{{ include "thanos.namespace" . | indent 2 }}
+spec:
+  serviceName: {{ template "thanos.store.fullname" . }}-headless
+  selector:
+    matchLabels:
+      {{- include "thanos.store.matchLabels" . | nindent 6 }}
+  replicas: {{ .Values.store.replicaCount }}
+  podManagementPolicy: {{ .Values.store.podManagementPolicy }}
+  template:
+    metadata:
+    {{- if .Values.store.podAnnotations }}
+      annotations:
+        {{ toYaml .Values.store.podAnnotations | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "thanos.store.labels" . | nindent 8 }}
+        {{- if .Values.store.podLabels}}
+        {{ toYaml .Values.store.podLabels | nindent 8 }}
+        {{- end}}
+    spec:
+{{- if .Values.store.priorityClassName }}
+      priorityClassName: "{{ .Values.store.priorityClassName }}"
+{{- end }}
+{{- if .Values.store.schedulerName }}
+      schedulerName: "{{ .Values.store.schedulerName }}"
+{{- end }}
+{{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion }}
+      {{- if or (.Values.store.enableServiceLinks) (eq (.Values.store.enableServiceLinks | toString) "<nil>") }}
+      enableServiceLinks: true
+      {{- else }}
+      enableServiceLinks: false
+      {{- end }}
+{{- end }}
+      serviceAccountName: {{ template "thanos.serviceAccountName.store" . }}
+      {{- if .Values.store.extraInitContainers }}
+      initContainers:
+{{ toYaml .Values.store.extraInitContainers | indent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ template "thanos.name" . }}-{{ .Values.store.name }}
+          image: "{{ .Values.store.image.repository }}:{{ .Values.store.image.tag }}"
+          imagePullPolicy: "{{ .Values.store.image.pullPolicy }}"
+          securityContext:
+            {{- toYaml .Values.store.containerSecurityContext | nindent 12 }}
+          {{- if .Values.store.env }}
+          env:
+{{ toYaml .Values.store.env | indent 12}}
+          {{- end }}
+          args:
+          - store
+          {{- if .Values.store.defaultFlagsOverride }}
+          {{ toYaml .Values.store.defaultFlagsOverride | nindent 12}}
+          {{- else }}
+          - --log.level={{ .Values.store.logLevel }}
+          - --log.format={{ .Values.store.logFormat }}
+          - --data-dir={{ .Values.store.dataDirectory }}
+          - --grpc-address=0.0.0.0:10901
+          - --http-address=0.0.0.0:10902
+          - --objstore.config-file={{ .Values.store.objStoreConfigFile }}
+          - --ignore-deletion-marks-delay={{ .Values.store.ignoreDeletionMarksDelay}}
+          {{- range .Values.store.extraFlags }}
+            - --{{ . }}
+          {{- end }}
+          {{- range $key, $value := .Values.store.extraArgs }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
+        {{- end }}
+          ports:
+          - containerPort: 10901
+            name: grpc
+          - containerPort: 10902
+            name: http
+          {{- if .Values.store.hostPort }}
+              hostPort: {{ .Values.store.hostPort }}
+          {{- end }}
+          readinessProbe:
+            {{- if not .Values.store.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.store.prefixURL }}/-/ready
+              port: 10902
+              scheme: {{ .Values.store.probeScheme }}
+            {{- else }}
+            tcpSocket:
+              port: 10902
+            {{- end }}
+            periodSeconds: {{ .Values.store.readinessProbePeriodSeconds }}
+            failureThreshold: {{ .Values.store.readinessProbeFailureThreshold }}
+          livenessProbe:
+            {{- if not .Values.store.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.store.prefixURL }}/-/healthy
+              port: 10902
+              scheme: {{ .Values.store.probeScheme }}
+            {{- else }}
+            tcpSocket:
+              port: 10902
+            {{- end }}
+            periodSeconds: {{ .Values.store.livenessProbePeriodSeconds }}
+            failureThreshold: {{ .Values.store.livenessProbeFailureThreshold }}
+          resources:
+{{ toYaml .Values.store.resources | indent 12 }}
+          volumeMounts:
+            - name: storage-volume
+              mountPath: {{ .Values.store.persistentVolume.mountPath }}
+              subPath: "{{ .Values.store.persistentVolume.subPath }}"
+              readOnly: false
+            - name: thanos-storage-secret
+              mountPath: /etc/secret
+          {{- range .Values.store.extraHostPathMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.store.extraConfigmapMounts }}
+            - name: {{ $.Values.store.name }}-{{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.store.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- if .Values.store.extraVolumeMounts }}
+          {{ toYaml .Values.store.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+    {{- if .Values.store.sidecarContainers }}
+      {{- range $name, $spec :=  .Values.store.sidecarContainers }}
+        - name: {{ $name }}
+          {{- if kindIs "string" $spec }}
+            {{- tpl $spec $ | nindent 10 }}
+          {{- else }}
+            {{- toYaml $spec | nindent 10 }}
+          {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.store.dnsPolicy }}
+      dnsPolicy: {{ .Values.store.dnsPolicy }}
+    {{- end }}
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+    {{- end }}
+    {{- if .Values.store.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.store.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.store.hostAliases }}
+      hostAliases:
+{{ toYaml .Values.store.hostAliases | indent 8 }}
+    {{- end }}
+    {{- if .Values.store.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.store.dnsConfig | indent 8 }}
+    {{- end }}
+    {{- if .Values.store.securityContext }}
+      securityContext:
+{{ toYaml .Values.store.securityContext | indent 8 }}
+    {{- end }}
+    {{- if .Values.store.tolerations }}
+      tolerations:
+{{ toYaml .Values.store.tolerations | indent 8 }}
+    {{- end }}
+    {{- if .Values.store.affinity }}
+      affinity:
+{{ toYaml .Values.store.affinity | indent 8 }}
+    {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.store.terminationGracePeriodSeconds }}
+      volumes:
+        - name: thanos-storage-secret
+          secret:
+            defaultMode: 420
+            secretName: thanos-storage-secret
+      {{- range .Values.store.extraHostPathMounts }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .hostPath }}
+      {{- end }}
+      {{- range .Values.store.extraConfigmapMounts }}
+        - name: {{ $.Values.store.name }}-{{ .name }}
+          configMap:
+            name: {{ .configMap }}
+      {{- end }}
+      {{- range .Values.store.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
+      {{- end }}
+{{- if .Values.store.extraVolumes }}
+{{ toYaml .Values.store.extraVolumes | indent 8}}
+{{- end }}
+{{- if .Values.store.persistentVolume.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage-volume
+        {{- if .Values.store.persistentVolume.annotations }}
+        annotations:
+{{ toYaml .Values.store.persistentVolume.annotations | indent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+{{ toYaml .Values.store.persistentVolume.accessModes | indent 10 }}
+        resources:
+          requests:
+            storage: "{{ .Values.store.persistentVolume.size }}"
+      {{- if .Values.store.persistentVolume.storageClass }}
+      {{- if (eq "-" .Values.store.persistentVolume.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: "{{ .Values.store.persistentVolume.storageClass }}"
+      {{- end }}
+      {{- end }}
+{{- else }}
+        - name: storage-volume
+          emptyDir:
+          {{- if .Values.store.emptyDir.sizeLimit }}
+            sizeLimit: {{ .Values.store.emptyDir.sizeLimit }}
+          {{- else }}
+            {}
+          {{- end -}}
+{{- end }}
+{{- end }}

@@ -1,0 +1,20 @@
+apiVersion: v2
+appVersion: 0.26.0
+description: Thanos Components
+name: thanos
+version: 1.0.0
+kubeVersion: ">=1.16.0-0"
+keywords:
+- thanos
+- thanos-query
+home: https://github.com/markafarrell/helm-charts/charts/thanos
+sources:
+- https://github.com/thanos-io/thanos
+maintainers:
+- name: markafarrell
+  email: mark.andrew.farrell@gmail.com
+dependencies: []
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial version

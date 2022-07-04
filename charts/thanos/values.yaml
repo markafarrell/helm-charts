@@ -1,0 +1,498 @@
+imagePullSecrets:
+# - name: "image-pull-secret"
+
+## Define serviceAccount names for components. Defaults to component's fully qualified name.
+##
+serviceAccounts:
+  query:
+    create: true
+    name:
+    annotations: {}
+  store:
+    create: true
+    name:
+    annotations: {}
+
+query:
+  ## If false, query will not be installed
+  ##
+  enabled: true
+
+  ## query container name
+  ##
+  name: query
+
+  logLevel: info
+  logFormat: logfmt
+
+  ## query container image
+  ##
+  image:
+    repository: quay.io/thanos/thanos
+    tag: v0.26.0
+    pullPolicy: IfNotPresent
+
+  annotations: {}
+  podAnnotations: {}
+
+  labels: {}
+  podLabels: {}
+
+  podManagementPolicy: OrderedReady
+
+  ## EnableServiceLinks indicates whether information about services should be injected
+  ## into pod's environment variables, matching the syntax of Docker links.
+  ## WARNING: the field is unsupported and will be skipped in K8s prior to v1.13.0.
+  ##
+  enableServiceLinks: true
+
+  ## query priorityClassName
+  ##
+  priorityClassName: ""
+
+  ## Custom HTTP headers for Readiness Probe
+  ##
+  ## Useful for providing HTTP Basic Auth to healthchecks
+  probeHeaders: []
+
+  tcpSocketProbeEnabled: true
+  probeScheme: HTTP
+  readinessProbePeriodSeconds: 5
+  readinessProbeFailureThreshold: 20
+  livenessProbePeriodSeconds: 30
+  livenessProbeFailureThreshold: 4
+
+  ## Additional query container arguments
+  ##
+  extraArgs: {}
+
+  ## Additional InitContainers to initialize the pod
+  ##
+  extraInitContainers: []
+
+  ## The URL prefix at which the container can be accessed. Useful in the case the '-web.external-url' includes a slug
+  ## so that the various internal URLs are still able to access as they are in the default case.
+  ## (Optional)
+  prefixURL: ""
+
+  ## External URL which can access query
+  baseURL: "http://localhost:9093"
+
+  ## Additional query container environment variable
+  ## For instance to add a http_proxy
+  ##
+  extraEnv: {}
+
+  ## Additional query Secret mounts
+  # Defines additional mounts with secrets. Secrets must be manually created in the namespace.
+  extraSecretMounts: []
+    # - name: secret-files
+    #   mountPath: /etc/secrets
+    #   subPath: ""
+    #   secretName: query-secret-files
+    #   readOnly: true
+
+  ## Additional query Configmap mounts
+  extraConfigmapMounts: []
+    # - name: template-files
+    #   mountPath: /etc/config/templates.d
+    #   configMap: query-template-files
+    #   readOnly: true
+
+  ## query Deployment Strategy type
+  # strategy:
+  #   type: Recreate
+
+  ## Node tolerations for query scheduling to nodes with taints
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ##
+  tolerations: []
+    # - key: "key"
+    #   operator: "Equal|Exists"
+    #   value: "value"
+    #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+  ## Node labels for query pod assignment
+  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+
+  ## Pod affinity
+  ##
+  affinity: {}
+
+  ## PodDisruptionBudget settings
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+  ##
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
+
+  ## Use an alternate scheduler, e.g. "stork".
+  ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
+  ##
+  # schedulerName:
+
+  ## Annotations to be added to query pods
+  ##
+  podAnnotations: {}
+
+  ## Labels to be added to Thanos query pods
+  ##
+  podLabels: {}
+
+  ## Specify if a Pod Security Policy for node-exporter must be created
+  ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+  ##
+  podSecurityPolicy:
+    annotations: {}
+      ## Specify pod annotations
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
+      ##
+      # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+      # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
+      # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+
+  ## Use a StatefulSet if replicaCount needs to be greater than 1 (see below)
+  ##
+  replicaCount: 1
+
+  ## Annotations to be added to deployment
+  ##
+  deploymentAnnotations: {}
+
+  ## query resource requests and limits
+  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources: {}
+    # limits:
+    #   cpu: 10m
+    #   memory: 32Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 32Mi
+
+  # Custom DNS configuration to be added to query pods
+  dnsConfig: {}
+    # nameservers:
+    #   - 1.2.3.4
+    # searches:
+    #   - ns1.svc.cluster-domain.example
+    #   - my.dns.search.suffix
+    # options:
+    #   - name: ndots
+    #     value: "2"
+  #   - name: edns0
+
+  ## Security context to be added to query pods
+  ##
+  securityContext:
+    runAsUser: 65534
+    fsGroup: 65534
+
+  ## Security context to be added to query container
+  containerSecurityContext: {}
+
+  service:
+    ## If false, no Service will be created for the Thanos query component
+    ##
+    enabled: true
+
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+    ## List of IP addresses at which the Thanos query component service is available
+    ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
+    ##
+    externalIPs: []
+
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    servicePort: 9090
+    sessionAffinity: None
+    type: ClusterIP
+
+    gRPC:
+      enabled: true
+      servicePort: 10901
+      # nodePort: 10901
+
+  endpoints:
+    - prometheus-server:10901
+    - thanos-store:10901
+
+store:
+  ## If false, store will not be installed
+  ##
+  enabled: true
+
+  ## store container name
+  ##
+  name: store
+
+  logLevel: info
+  logFormat: logfmt
+
+  objStoreConfigFile: /etc/secret/bucket-config.yml
+  dataDirectory: /var/thanos/store
+
+  ignoreDeletionMarksDelay: 24h
+
+  ## store container image
+  ##
+  image:
+    repository: quay.io/thanos/thanos
+    tag: v0.26.0
+    pullPolicy: IfNotPresent
+
+  annotations: {}
+  podAnnotations: {}
+
+  labels: {}
+  podLabels: {}
+
+  podManagementPolicy: OrderedReady
+
+  ## EnableServiceLinks indicates whether information about services should be injected
+  ## into pod's environment variables, matching the syntax of Docker links.
+  ## WARNING: the field is unsupported and will be skipped in K8s prior to v1.13.0.
+  ##
+  enableServiceLinks: true
+
+  ## store priorityClassName
+  ##
+  priorityClassName: ""
+
+  tcpSocketProbeEnabled: true
+  probeScheme: HTTP
+  readinessProbePeriodSeconds: 5
+  readinessProbeFailureThreshold: 20
+  livenessProbePeriodSeconds: 30
+  livenessProbeFailureThreshold: 8
+
+  ## Custom HTTP headers for Readiness Probe
+  ##
+  ## Useful for providing HTTP Basic Auth to healthchecks
+  probeHeaders: []
+
+  ## Additional store container arguments
+  ##
+  extraArgs: {}
+
+  ## Additional InitContainers to initialize the pod
+  ##
+  extraInitContainers: []
+
+  ## Additional store container environment variable
+  ##
+  extraEnv: {}
+
+  ## Additional store Secret mounts
+  # Defines additional mounts with secrets. Secrets must be manually created in the namespace.
+  extraSecretMounts: []
+    # - name: secret-files
+    #   mountPath: /etc/secrets
+    #   subPath: ""
+    #   secretName: store-secret-files
+    #   readOnly: true
+
+  ## Additional store Configmap mounts
+  extraConfigmapMounts: []
+    # - name: template-files
+    #   mountPath: /etc/config/templates.d
+    #   configMap: store-template-files
+    #   readOnly: true
+
+  ## store Deployment Strategy type
+  # strategy:
+  #   type: Recreate
+
+  ## Node tolerations for store scheduling to nodes with taints
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ##
+  tolerations: []
+    # - key: "key"
+    #   operator: "Equal|Exists"
+    #   value: "value"
+    #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+  ## Node labels for store pod assignment
+  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+
+  ## Pod affinity
+  ##
+  affinity: {}
+
+  ## PodDisruptionBudget settings
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+  ##
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
+
+  ## Use an alternate scheduler, e.g. "stork".
+  ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
+  ##
+  # schedulerName:
+
+  persistentVolume:
+    ## If true, store will create/use a Persistent Volume Claim
+    ## If false, use emptyDir
+    ##
+    enabled: true
+
+    ## store data Persistent Volume access modes
+    ## Must match those of existing PV or dynamic provisioner
+    ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+    ##
+    accessModes:
+      - ReadWriteOnce
+
+    ## store data Persistent Volume Claim annotations
+    ##
+    annotations: {}
+
+    ## store data Persistent Volume existing claim name
+    ## Requires store.persistentVolume.enabled: true
+    ## If defined, PVC must be created manually before volume will be bound
+    existingClaim: ""
+
+    ## store data Persistent Volume mount root path
+    ##
+    mountPath: /var/thanos/store
+
+    ## store data Persistent Volume size
+    ##
+    size: 1Gi
+
+    ## store data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+
+    ## store data Persistent Volume Binding Mode
+    ## If defined, volumeBindingMode: <volumeBindingMode>
+    ## If undefined (the default) or set to null, no volumeBindingMode spec is
+    ##   set, choosing the default mode.
+    ##
+    # volumeBindingMode: ""
+
+    ## Subdirectory of store data Persistent Volume to mount
+    ## Useful if the volume's root directory is not empty
+    ##
+    subPath: ""
+
+    ## Persistent Volume Claim Selector
+    ## Useful if Persistent Volumes have been provisioned in advance
+    ## Ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#selector
+    ##
+    # selector:
+    #  matchLabels:
+    #    release: "stable"
+    #  matchExpressions:
+    #    - { key: environment, operator: In, values: [ dev ] }
+
+  emptyDir:
+    ## store emptyDir volume size limit
+    ##
+    sizeLimit: ""
+
+  ## Annotations to be added to store pods
+  ##
+  podAnnotations: {}
+
+  ## Labels to be added to Thanos store pods
+  ##
+  podLabels: {}
+
+  ## Specify if a Pod Security Policy for node-exporter must be created
+  ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+  ##
+  podSecurityPolicy:
+    annotations: {}
+      ## Specify pod annotations
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
+      ##
+      # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+      # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
+      # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+
+  ## Use a StatefulSet if replicaCount needs to be greater than 1 (see below)
+  ##
+  replicaCount: 1
+
+  ## Annotations to be added to deployment
+  ##
+  deploymentAnnotations: {}
+
+  ## store resource requests and limits
+  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources: {}
+    # limits:
+    #   cpu: 10m
+    #   memory: 32Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 32Mi
+
+  # Custom DNS configuration to be added to store pods
+  dnsConfig: {}
+    # nameservers:
+    #   - 1.2.3.4
+    # searches:
+    #   - ns1.svc.cluster-domain.example
+    #   - my.dns.search.suffix
+    # options:
+    #   - name: ndots
+    #     value: "2"
+  #   - name: edns0
+
+  ## Security context to be added to store pods
+  ##
+  securityContext:
+    runAsUser: 65534
+    fsGroup: 65534
+
+  ## Security context to be added to store container
+  containerSecurityContext: {}
+
+  service:
+    ## If false, no Service will be created for the Thanos store component
+    ##
+    enabled: true
+
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+    ## List of IP addresses at which the store service is available
+    ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
+    ##
+    externalIPs: []
+
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    servicePort: 10902
+    # nodePort: 30000
+    sessionAffinity: None
+    type: ClusterIP
+
+    gRPC:
+      enabled: true
+      servicePort: 10901
+      # nodePort: 10901
+
+# Force namespace of namespaced resources
+forceNamespace: null
