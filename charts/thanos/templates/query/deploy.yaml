@@ -1,0 +1,204 @@
+{{- if .Values.query.enabled -}}
+apiVersion: {{ template "thanos.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+{{- if .Values.query.deploymentAnnotations }}
+  annotations:
+    {{ toYaml .Values.query.deploymentAnnotations | nindent 4 }}
+{{- end }}
+  labels:
+    {{- include "thanos.query.labels" . | nindent 4 }}
+  name: {{ template "thanos.query.fullname" . }}
+{{ include "thanos.namespace" . | indent 2 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "thanos.query.matchLabels" . | nindent 6 }}
+  replicas: {{ .Values.query.replicaCount }}
+  {{- if .Values.query.strategy }}
+  strategy:
+{{ toYaml .Values.query.strategy | trim | indent 4 }}
+    {{ if eq .Values.query.strategy.type "Recreate" }}rollingUpdate: null{{ end }}
+{{- end }}
+  template:
+    metadata:
+    {{- if .Values.query.podAnnotations }}
+      annotations:
+        {{ toYaml .Values.query.podAnnotations | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "thanos.query.labels" . | nindent 8 }}
+        {{- if .Values.query.podLabels}}
+        {{ toYaml .Values.query.podLabels | nindent 8 }}
+        {{- end}}
+    spec:
+{{- if .Values.query.priorityClassName }}
+      priorityClassName: "{{ .Values.query.priorityClassName }}"
+{{- end }}
+{{- if .Values.query.schedulerName }}
+      schedulerName: "{{ .Values.query.schedulerName }}"
+{{- end }}
+{{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion }}
+      {{- if or (.Values.query.enableServiceLinks) (eq (.Values.query.enableServiceLinks | toString) "<nil>") }}
+      enableServiceLinks: true
+      {{- else }}
+      enableServiceLinks: false
+      {{- end }}
+{{- end }}
+      serviceAccountName: {{ template "thanos.serviceAccountName.query" . }}
+      {{- if .Values.query.extraInitContainers }}
+      initContainers:
+{{ toYaml .Values.query.extraInitContainers | indent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ template "thanos.name" . }}-{{ .Values.query.name }}
+          image: "{{ .Values.query.image.repository }}:{{ .Values.query.image.tag }}"
+          imagePullPolicy: "{{ .Values.query.image.pullPolicy }}"
+          securityContext:
+            {{- toYaml .Values.query.containerSecurityContext | nindent 12 }}
+          {{- if .Values.query.env }}
+          env:
+{{ toYaml .Values.query.env | indent 12}}
+          {{- end }}
+          args:
+            - query
+        {{- if .Values.query.defaultFlagsOverride }}
+        {{ toYaml .Values.query.defaultFlagsOverride | nindent 12}}
+        {{- else }}
+            - --log.level={{ .Values.query.logLevel }}
+            - --log.format={{ .Values.query.logFormat }}
+            - --grpc-address=0.0.0.0:10901
+            - --http-address=0.0.0.0:9090
+          {{- range $endpoint := .Values.query.endpoints }}
+            - --endpoint={{ $endpoint }}
+          {{- end }}
+        {{- end }}
+          ports:
+            - containerPort: 10901
+              name: grpc
+            - containerPort: 9090
+              name: http
+          readinessProbe:
+            {{- if not .Values.query.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.query.prefixURL }}/-/ready
+              port: 9090
+              scheme: {{ .Values.query.probeScheme }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
+            periodSeconds: {{ .Values.query.readinessProbePeriodSeconds }}
+            failureThreshold: {{ .Values.query.readinessProbeFailureThreshold }}
+          livenessProbe:
+            {{- if not .Values.query.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.query.prefixURL }}/-/healthy
+              port: 9090
+              scheme: {{ .Values.query.probeScheme }}
+              {{- if .Values.query.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.query.probeHeaders}}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
+            periodSeconds: {{ .Values.query.livenessProbePeriodSeconds }}
+            failureThreshold: {{ .Values.query.livenessProbeFailureThreshold }}
+          resources:
+{{ toYaml .Values.query.resources | indent 12 }}
+          volumeMounts:
+          {{- range .Values.query.extraHostPathMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.query.extraConfigmapMounts }}
+            - name: {{ $.Values.query.name }}-{{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.query.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- if .Values.query.extraVolumeMounts }}
+            {{ toYaml .Values.query.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+          {{- if .Values.query.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.query.containerSecurityContext | nindent 12 }}
+          {{- end }}
+      {{- if .Values.query.sidecarContainers }}
+        {{- range $name, $spec :=  .Values.query.sidecarContainers }}
+        - name: {{ $name }}
+          {{- if kindIs "string" $spec }}
+            {{- tpl $spec $ | nindent 10 }}
+          {{- else }}
+            {{- toYaml $spec | nindent 10 }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- if .Values.query.dnsPolicy }}
+      dnsPolicy: {{ .Values.query.dnsPolicy }}
+    {{- end }}
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+    {{- end }}
+    {{- if .Values.query.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.query.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.query.hostAliases }}
+      hostAliases:
+{{ toYaml .Values.query.hostAliases | indent 8 }}
+    {{- end }}
+    {{- if .Values.query.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.query.dnsConfig | indent 8 }}
+    {{- end }}
+    {{- if .Values.query.securityContext }}
+      securityContext:
+{{ toYaml .Values.query.securityContext | indent 8 }}
+    {{- end }}
+    {{- if .Values.query.tolerations }}
+      tolerations:
+{{ toYaml .Values.query.tolerations | indent 8 }}
+    {{- end }}
+    {{- if .Values.query.affinity }}
+      affinity:
+{{ toYaml .Values.query.affinity | indent 8 }}
+    {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.query.terminationGracePeriodSeconds }}
+      volumes:
+      {{- range .Values.query.extraHostPathMounts }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .hostPath }}
+      {{- end }}
+      {{- range .Values.query.extraConfigmapMounts }}
+        - name: {{ $.Values.query.name }}-{{ .name }}
+          configMap:
+            name: {{ .configMap }}
+      {{- end }}
+      {{- range .Values.query.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
+      {{- end }}
+{{- if .Values.query.extraVolumes }}
+{{ toYaml .Values.query.extraVolumes | indent 8}}
+{{- end }}
+{{- end -}}
