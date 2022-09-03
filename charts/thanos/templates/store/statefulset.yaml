@@ -73,10 +73,10 @@ spec:
           - --objstore.config-file={{ .Values.store.objStoreConfigFile }}
           - --ignore-deletion-marks-delay={{ .Values.store.ignoreDeletionMarksDelay}}
           {{- range .Values.store.extraFlags }}
-            - --{{ . }}
+          - --{{ . }}
           {{- end }}
           {{- range $key, $value := .Values.store.extraArgs }}
-            - --{{ $key }}={{ $value }}
+          - --{{ $key }}={{ $value }}
           {{- end }}
         {{- end }}
           ports:
